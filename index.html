@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Highlight features containing similar data</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+<script src="d3.js"></script>
+<style>
+	body { margin: 0; padding: 0; }
+	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<style>
+    .map-overlay {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+        position: absolute;
+        width: 25%;
+        top: 10px;
+        left: 10px;
+        padding: 10px;
+        display: none;
+    }
+    #map{
+      z-index:-1;
+
+    }
+    #control{
+      z-index:999;
+      padding:20px;
+      width:300px;
+      height:300px;
+      background-color: #fff;
+      margin:40px;
+    }
+    .filterButton{
+      border:1px solid black;
+      padding:10px;
+    }
+</style>
+
+<div id="control">filter population:
+	<div id="mbps1" class="filterButton">Zoom</div>
+	<div id="mbps2" class="filterButton">Cell Phone</div>
+  <div id="mbps3" class="filterButton">Computer</div>
+  <div id="mbps4" class="filterButton">Video Conference</div>
+  <div id="reset" class="filterButton">RESET</div>
+<div id="display">MBPS Needed: </div>
+</div>
+
+
+<div id="map"></div>
+<div id="map-overlay" class="map-overlay"></div>
+
+<script>
+  Promise.all([d3.json("georgia_avg_down_county_dots_2.geojson")])
+  .then(function(data){
+      ready(data[0])
+  })
+  function ready(data){
+      var map = drawMap(data)
+
+    var totalWifiNeeded = 0
+      var clickedPop1 = false
+
+
+			d3.select("#mbps1")
+			.on("click",function(){
+				if( clickedPop1==true){
+					totalWifiNeeded -= 25
+					 clickedPop1 = false
+				}else{
+					totalWifiNeeded += 25
+					 clickedPop1 = true
+				}
+
+				var filter = ['>=','avg_down',totalWifiNeeded]
+				map.setFilter('counties', filter);
+				d3.select("#display").html("MBPS Needed:" +totalWifiNeeded)
+			})
+
+
+    d3.select("#mbps2")
+    .on("click",function(){
+      if( clickedPop1==true){
+        totalWifiNeeded -= 50
+         clickedPop1 = false
+      }else{
+        totalWifiNeeded += 50
+         clickedPop1 = true
+      }
+
+      var filter = ['>=','avg_down',totalWifiNeeded]
+      map.setFilter('counties', filter);
+      d3.select("#display").html("MBPS Needed:" +totalWifiNeeded)
+    })
+
+    d3.select("#mbps3")
+    .on("click",function(){
+      //THIS IS HOW YOU COMBINE FILTERS
+      totalWifiNeeded += 75
+
+      var filter = ['>=','avg_down',totalWifiNeeded]
+      map.setFilter('counties', filter);
+
+      d3.select("#display").html("MBPS Needed:" +totalWifiNeeded)
+    })
+
+
+    d3.select("#mbps4")
+    .on("click",function(){
+      totalWifiNeeded += 100
+
+      var filter = ['>=','avg_down',totalWifiNeeded]
+      map.setFilter('counties', filter);
+      d3.select("#display").html("MBPS Needed:" +totalWifiNeeded)
+    })
+
+    d3.select("#reset")
+    .on("click",function(){
+      totalWifiNeeded=0
+      var filter = ['>=','avg_down',totalWifiNeeded]
+      map.setFilter('counties', filter);
+      d3.select("#display").html("MBPS Needed:" +totalWifiNeeded)
+
+    })
+
+  }
+
+
+
+  function drawMap(data){
+
+  	mapboxgl.accessToken = 'pk.eyJ1IjoiYzRzci1nc2FwcCIsImEiOiJja2J0ajRtNzMwOHBnMnNvNnM3Ymw5MnJzIn0.fsTNczOFZG8Ik3EtO9LdNQ';
+      var map = new mapboxgl.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/streets-v11',
+          center: [-98, 38.88],
+          minZoom: 2,
+          zoom: 3
+      });
+
+      var overlay = document.getElementById('map-overlay');
+
+      // Create a popup, but don't add it to the map yet.
+      var popup = new mapboxgl.Popup({
+          closeButton: false
+      });
+
+      map.on('load', function () {
+          // Add the source to query. In this example we're using
+          // county polygons uploaded as vector tiles
+          map.addSource('counties', {
+              'type': 'geojson',
+              'data': data
+          });
+
+          map.addLayer(
+              {
+                  'id': 'counties',
+                  'type': 'fill',
+                  'source': 'counties',
+                'paint': {
+                      'fill-color': 'red'
+                  }
+              }); // Place polygon under these labels.
+        })
+
+        return map
+  }
+
+</script>
+
+</body>
+</html>

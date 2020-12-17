@@ -1,2 +1,1 @@
-# nd2584.github.io
- 
+# djsnelson_week7
